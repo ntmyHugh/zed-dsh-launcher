@@ -20,6 +20,41 @@ const HOST = '127.0.0.1';
 const DSHZ = path.join(__dirname, 'dsh-zed.js');
 const WEB = path.join(__dirname, 'web');
 const ZED_LOG = path.join(process.env.LOCALAPPDATA || '', 'Zed', 'logs', 'Zed.log');
+const RUN_DIR = path.join(process.env.USERPROFILE || process.env.HOME || '', '.dsh', 'run');
+const STATE_FILE = path.join(RUN_DIR, 'dsh-zed-ui.json');
+
+function readState() {
+    try {
+        return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    } catch {
+        return null;
+    }
+}
+
+function pidAlive(pid) {
+    try {
+        process.kill(pid, 0);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function openBrowser(url) {
+    spawn('powershell', ['-NoProfile', '-Command', `Start-Process msedge --app=${url}`], { stdio: 'ignore', detached: true }).unref();
+}
+
+function stopServer() {
+    const state = readState();
+    if (!state || !pidAlive(state.pid)) {
+        console.log('DSH-Z UI 没有在运行。');
+        try { fs.unlinkSync(STATE_FILE); } catch {}
+        return;
+    }
+    try { process.kill(state.pid, 'SIGTERM'); } catch {}
+    try { fs.unlinkSync(STATE_FILE); } catch {}
+    console.log(`已停止 DSH-Z UI（pid ${state.pid}, ${state.url}）`);
+}
 
 const options = process.argv.slice(2);
 const portOption = Number((options.find((_, i) => options[i - 1] === '--port') || '') || 0);
@@ -162,6 +197,42 @@ async function handleApi(request, response) {
     }
 }
 
+function sleepSync(ms) {
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+if (options.includes('--stop')) {
+    stopServer();
+    process.exit(0);
+}
+
+if (options.includes('--detach') && !process.env.DSH_ZED_UI_CHILD) {
+    const running = readState();
+    if (running && pidAlive(running.pid)) {
+        console.log(`DSH-Z UI 已在运行: ${running.url}`);
+        openBrowser(running.url);
+        process.exit(0);
+    }
+    const child = spawn(process.execPath, [__filename, '--no-open'], {
+        detached: true,
+        stdio: 'ignore',
+        env: { ...process.env, DSH_ZED_UI_CHILD: '1' },
+    });
+    child.unref();
+    const deadline = Date.now() + 15000;
+    while (Date.now() < deadline) {
+        const current = readState();
+        if (current && pidAlive(current.pid)) {
+            console.log(`DSH-Z UI 已在后台启动: ${current.url}`);
+            openBrowser(current.url);
+            process.exit(0);
+        }
+        sleepSync(100);
+    }
+    console.error('DSH-Z UI 启动超时。');
+    process.exit(1);
+}
+
 const server = http.createServer((request, response) => {
     if (request.url.startsWith('/api/')) {
         void handleApi(request, response);
@@ -173,12 +244,25 @@ const server = http.createServer((request, response) => {
 server.listen(portOption, HOST, () => {
     const port = server.address().port;
     const url = `http://${HOST}:${port}`;
+    fs.mkdirSync(RUN_DIR, { recursive: true });
+    fs.writeFileSync(STATE_FILE, JSON.stringify({ pid: process.pid, port, url, startedAt: new Date().toISOString() }), 'utf8');
     console.log(`DSH-Z UI: ${url}`);
-    if (!noOpen) {
-        spawn('powershell', ['-NoProfile', '-Command', `Start-Process msedge --app=${url}`], { stdio: 'ignore', detached: true }).unref();
-    }
+    if (!noOpen) openBrowser(url);
 });
 
+function cleanupState() {
+    const state = readState();
+    if (state && state.pid === process.pid) {
+        try { fs.unlinkSync(STATE_FILE); } catch {}
+    }
+}
+
 process.on('SIGINT', () => {
+    cleanupState();
+    server.close(() => process.exit(0));
+});
+
+process.on('SIGTERM', () => {
+    cleanupState();
     server.close(() => process.exit(0));
 });

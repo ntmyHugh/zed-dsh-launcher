@@ -7,5 +7,5 @@ if not exist "%DSHZ%" (
   pause
   exit /b 1
 )
-call "%DSHZ%" ui
+call "%DSHZ%" ui --detach
 endlocal
