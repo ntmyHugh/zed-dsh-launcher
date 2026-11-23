@@ -1,0 +1,96 @@
+# zed-dsh-launcher
+
+`dshz` —— 管理 **Zed + DeepSeek Harness (DSH)** 这套远程开发环境的运维小工具。
+
+解决长期使用中反复出现的几类问题：
+
+- 同一个 DSH 会话被多个 Zed 窗口/进程同时加载，报
+  `session "..." is already owned by an active write handle`；
+- 远端残留的 `zed-remote-server`（`setup-*`）与无主 `dsh --profile acp` 进程；
+- Zed 启动时恢复过多个工作区窗口，导致重复加载；
+- 线程 `session_id` 丢失/为空，历史会话打不开。
+
+## 功能
+
+| 命令 | 作用 |
+|---|---|
+| `dshz status` | 本地 Zed 状态、远端 zed server、acp 进程、会话锁（标出重复持有） |
+| `dshz start` | 安全启动：检查本地 Zed → 清理远端 server（确认）→ 释放锁（确认）→ 链接线程 → 启动 Zed |
+| `dshz release <id前8位>` | 结束持有该会话锁的进程 |
+| `dshz release --duplicates` | 只处理被多个进程持有的会话：保留运行最久的，结束其余 |
+| `dshz clean` | 清理 `setup-*` 旧 server（预览 + 确认） |
+| `dshz clean --acp-orphans --state` | 额外清理未持锁的 acp 进程与失效 `server_state` |
+| `dshz link [--dry-run]` | 调用 `link-zed-threads.js` 补线程 `session_id` |
+| `dshz windows` | 列出 Zed 会恢复的工作区窗口（id / 路径 / 最后使用） |
+| `dshz windows --prune 50,71` | 删除指定恢复项（需先退出 Zed，自动备份 `db.sqlite`） |
+| `dshz tui` | 菜单界面（无参数时默认） |
+
+破坏性操作默认先预览再确认；`--yes` 跳过确认，供脚本调用。
+
+## 安装
+
+1. 依赖：
+   - Windows + DeepSeek Harness（内置 Node 运行时）；
+   - Zed；
+   - 到远端主机的 ssh 免密（默认主机名 `linuxServer`，可在 `src/dshz.js` 顶部修改）；
+   - 远端已配置 `~/.dsh/bin/link-zed-threads.js`、`cleanup-acp.sh`（本工具会复用）。
+2. 在 PowerShell 中执行：
+
+```powershell
+cd D:\code\tools\zed-dsh-launcher
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+安装脚本会：
+
+- 把 `src/dshz.js`、`remote/zed-status.sh` 复制到 `%USERPROFILE%\.dsh\bin\`；
+- 把 `bin/dshz.cmd`、`desktop/DSH-Z 控制台.bat` 转成 GBK + CRLF 后写入目标位置；
+- 在桌面 `ss` 目录创建入口（如不存在则创建）。
+
+首次运行 `dshz status` 时会把 `zed-status.sh` 自动部署到远端。
+
+## 使用
+
+双击桌面 `ss\DSH-Z 控制台.bat`，或命令行：
+
+```bat
+dshz status
+dshz start
+dshz release --duplicates
+```
+
+### 遇到 `already owned` 时
+
+1. `dshz status` 找到对应会话的持有者 pid；
+2. `dshz release <会话 id 前 8 位>`；
+3. 在 Zed 里重新打开该线程（只打开一次，等待加载完成）。
+
+### 减少复发
+
+- 退出 Zed 前只保留一个窗口（多余的远程窗口会在下次启动时一起恢复）；
+- 必要时 `dshz windows` 查看恢复列表，用 `--prune` 删除不用的窗口记录；
+- 用 `dshz start` 代替手动启动。
+
+## 目录结构
+
+```
+src/dshz.js            核心逻辑（Node CLI）
+bin/dshz.cmd           Windows 入口（自动定位 DSH 自带 Node）
+remote/zed-status.sh   远端状态采集脚本（JSON 输出）
+desktop/DSH-Z 控制台.bat  菜单入口
+docs/USAGE.md          命令速查
+install.ps1            安装脚本
+```
+
+## 已知限制
+
+- `windows --prune` 需要先完全退出 Zed，且会修改 Zed 的 `db.sqlite`（自动备份）；
+- 远端主机名、Zed/DSH 路径在 `src/dshz.js` 顶部常量中配置；
+- 目前是 CLI/TUI；本地 Web GUI（同一套命令的界面外壳）是后续计划。
+
+## Roadmap
+
+- [ ] 本地 Web GUI（状态表格 + 一键操作）
+- [ ] 锁冲突后台告警/自动处理
+- [ ] 集成 clangd 索引、Semble MCP、串口状态
+- [ ] 会话分支：`session/fork` + 新线程绑定
