@@ -44,8 +44,7 @@ foreach ($file in Get-ChildItem (Join-Path $repo 'src\web') -File) {
 }
 
 Copy-GbkCrlf 'bin/dsh-zed.cmd' (Join-Path $bin 'dsh-zed.cmd')
-Copy-GbkCrlf 'desktop/DSH-Z 控制台.bat' (Join-Path $desktopDir 'DSH-Z 控制台.bat')
-Copy-GbkCrlf 'desktop/DSH-Z UI.bat' (Join-Path $desktopDir 'DSH-Z UI.bat')
+# 桌面入口默认不复制；直接用仓库 desktop\*.bat
 
 Write-Host ''
 Write-Host "完成。入口: $(Join-Path $desktopDir 'DSH-Z 控制台.bat')"
