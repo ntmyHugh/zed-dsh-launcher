@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 /**
- * dshz —— DSH + Zed 运维小工具（核心 CLI）
+ * dsh-zed —— DSH + Zed 运维小工具（核心 CLI）
  *
  * 命令：
- *   dshz status                 查看本地 Zed、远端 server、acp 进程、会话锁（标出重复持有）
- *   dshz start [--yes]          安全启动：检查 → 清理 → 链接线程 → 启动 Zed
- *   dshz release <session|--duplicates> [--yes]
+ *   dsh-zed status                 查看本地 Zed、远端 server、acp 进程、会话锁（标出重复持有）
+ *   dsh-zed start [--yes]          安全启动：检查 → 清理 → 链接线程 → 启动 Zed
+ *   dsh-zed release <session|--duplicates> [--yes]
  *                               释放指定会话（或所有重复持有）的锁
- *   dshz clean [--servers stale|all] [--acp-orphans] [--state] [--yes]
+ *   dsh-zed clean [--servers stale|all] [--acp-orphans] [--state] [--yes]
  *                               清理旧 server / 无锁 acp / server_state 残留
- *   dshz link [--dry-run] [其它参数…]
+ *   dsh-zed link [--dry-run] [其它参数…]
  *                               调用 link-zed-threads.js 绑定线程
- *   dshz windows [--prune <id,id>] [--yes]
+ *   dsh-zed windows [--prune <id,id>] [--yes]
  *                               列出/清理 Zed 会恢复的工作区窗口
- *   dshz tui                    菜单界面（无参数时默认进入）
- *   dshz ui                     本地 Web UI（浏览器打开）
+ *   dsh-zed tui                    菜单界面（无参数时默认进入）
+ *   dsh-zed ui                     本地 Web UI（浏览器打开）
  *
  * 所有破坏性操作都先预览，`--yes` 才执行。
  */
@@ -177,7 +177,7 @@ function cmdStatus() {
         table(['session', '标题', '持有者 pid', '状态'], rows);
         if (remote.locks.some((entry) => entry.holders.length > 1)) {
             out('');
-            out('提示：出现 ⚠ 重复时，用 `dshz release --duplicates` 释放多出来的持有者。');
+            out('提示：出现 ⚠ 重复时，用 `dsh-zed release --duplicates` 释放多出来的持有者。');
         }
     }
 }
@@ -190,7 +190,7 @@ function killRemotePids(pids, reason) {
 }
 
 function cmdRelease(target) {
-    if (!target) throw new Error('用法: dshz release <session-id>|--duplicates [--yes]');
+    if (!target) throw new Error('用法: dsh-zed release <session-id>|--duplicates [--yes]');
     const remote = remoteStatus();
     let pids = [];
     if (target === '--duplicates') {
@@ -434,7 +434,7 @@ function main() {
         }
         default:
             out(`未知命令: ${command}`);
-            out('用法: dshz status|start|release|clean|link|windows|tui|ui [选项]');
+            out('用法: dsh-zed status|start|release|clean|link|windows|tui|ui [选项]');
             process.exitCode = 2;
     }
 }

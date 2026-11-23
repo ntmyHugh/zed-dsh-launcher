@@ -1,4 +1,4 @@
-﻿# 安装 zed-dsh-launcher 到本机
+﻿# 安装 dsh-zed 到本机
 # 用法: powershell -ExecutionPolicy Bypass -File .\install.ps1
 $ErrorActionPreference = 'Stop'
 
@@ -25,19 +25,28 @@ function Copy-GbkCrlf($srcRel, $dst) {
     Write-Host "  installed $dst"
 }
 
-Write-Host 'Installing zed-dsh-launcher...'
-Copy-Utf8 'src/dshz.js' (Join-Path $bin 'dshz.js')
+Write-Host 'Installing dsh-zed...'
+
+# 清理旧命名（dshz）留下的文件
+foreach ($old in @('dshz.js', 'dshz.cmd')) {
+    $path = Join-Path $bin $old
+    if (Test-Path $path) { Remove-Item $path -Force; Write-Host "  removed legacy $path" }
+}
+
+Copy-Utf8 'src/dsh-zed.js' (Join-Path $bin 'dsh-zed.js')
 Copy-Utf8 'src/ui.js' (Join-Path $bin 'ui.js')
 Copy-Utf8 'remote/zed-status.sh' (Join-Path $bin 'zed-status.sh')
+
 $webTarget = Join-Path $bin 'web'
 if (-not (Test-Path $webTarget)) { New-Item -ItemType Directory -Force -Path $webTarget | Out-Null }
 foreach ($file in Get-ChildItem (Join-Path $repo 'src\web') -File) {
     Copy-Utf8 ('src/web/' + $file.Name) (Join-Path $webTarget $file.Name)
 }
-Copy-GbkCrlf 'bin/dshz.cmd' (Join-Path $bin 'dshz.cmd')
+
+Copy-GbkCrlf 'bin/dsh-zed.cmd' (Join-Path $bin 'dsh-zed.cmd')
 Copy-GbkCrlf 'desktop/DSH-Z 控制台.bat' (Join-Path $desktopDir 'DSH-Z 控制台.bat')
 Copy-GbkCrlf 'desktop/DSH-Z UI.bat' (Join-Path $desktopDir 'DSH-Z UI.bat')
 
 Write-Host ''
 Write-Host "完成。入口: $(Join-Path $desktopDir 'DSH-Z 控制台.bat')"
-Write-Host '首次运行 dshz status 会自动把 zed-status.sh 部署到远端。'
+Write-Host '首次运行 dsh-zed status 会自动把 zed-status.sh 部署到远端。'

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * dshz Web UI —— 本地 HTTP 服务 + 静态页面
+ * dsh-zed Web UI —— 本地 HTTP 服务 + 静态页面
  *
- * 直接复用 dshz.js 的 CLI（--json / --yes），避免逻辑分叉：
+ * 直接复用 dsh-zed.js 的 CLI（--json / --yes），避免逻辑分叉：
  *   GET  /api/status            本地 Zed + 远端状态
  *   POST /api/action            执行动作（release / clean / start / link）
  *   GET  /api/windows           Zed 恢复窗口列表
@@ -17,7 +17,7 @@ const path = require('node:path');
 const { spawn, spawnSync } = require('node:child_process');
 
 const HOST = '127.0.0.1';
-const DSHZ = path.join(__dirname, 'dshz.js');
+const DSHZ = path.join(__dirname, 'dsh-zed.js');
 const WEB = path.join(__dirname, 'web');
 const ZED_LOG = path.join(process.env.LOCALAPPDATA || '', 'Zed', 'logs', 'Zed.log');
 
