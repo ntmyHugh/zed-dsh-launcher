@@ -155,7 +155,7 @@ function cmdStatus() {
     out('');
     out(`=== 远端 zed remote server（${remote.servers.length}）===`);
     if (remote.servers.length === 0) out('  （无）');
-    else table(['identifier', 'pid', '运行时长'], remote.servers.map((s) => [s.identifier, s.pid, s.etime]));
+    else table(['identifier', 'pid', '运行时长'], remote.servers.map((s) => [s.identifier + (/^setup-/.test(s.identifier) ? '（连接池，Zed 运行时会自动重连）' : ''), s.pid, s.etime]));
 
     out('');
     out(`=== 远端 dsh acp 进程（${remote.acp.length}）===`);
@@ -229,7 +229,13 @@ function confirm(question) {
 
 function cmdClean(options) {
     const remote = remoteStatus();
-    const staleServers = remote.servers.filter((server) => /^setup-/.test(server.identifier));
+    const zedRunning = localZedRunning();
+    let staleServers = remote.servers.filter((server) => /^setup-/.test(server.identifier));
+    if (zedRunning && staleServers.length > 0 && !args.includes('--force')) {
+        out('本地 Zed 正在运行：setup-* 是 Zed 的连接池连接，结束会自动重连（跳过）。');
+        out('如需强行结束，先退出 Zed，或加 --force。');
+        staleServers = [];
+    }
     const targets = options.servers === 'all' ? remote.servers : staleServers;
     const orphanAcp = remote.acp.filter((proc) => !remote.locks.some((entry) => entry.holders.includes(proc.pid)));
 

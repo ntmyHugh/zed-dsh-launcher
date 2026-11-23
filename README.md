@@ -97,6 +97,13 @@ docs/USAGE.md          命令速查
 install.ps1            安装脚本
 ```
 
+## 关于 setup-* 连接
+
+远端标识为 `setup-N` 的进程是 Zed 的**连接池/初始化连接**（源码中的 `ConnectionIdentifier::Setup`），不是窗口对应的 `workspace-N`。Zed 运行期间杀掉它，客户端会立刻用 `--reconnect` 重连，因此：
+
+- **Zed 运行时不要清理 setup-***（`dshz clean` 已默认跳过并提示）；
+- 它不持有会话锁、不跑 agent，留着无害；
+- 只有在 **Zed 已退出**后仍残留的 setup-* 才是孤儿，可以清理（`dshz clean --force`）。
 ## 已知限制
 
 - `windows --prune` 需要先完全退出 Zed，且会修改 Zed 的 `db.sqlite`（自动备份）；
