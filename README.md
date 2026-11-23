@@ -1,12 +1,15 @@
 # zed-dsh-launcher
 
-`dsh-zed` —— 管理 **Zed + DeepSeek Harness (DSH)** 这套远程开发环境的运维小工具。
+**DSH-Z**（命令行：`dsh-zed`）—— 管理 **Zed + DeepSeek Harness (DSH)** 这套远程开发环境的运维小工具。
+
+> 命名说明：产品名是 **DSH-Z**；命令和源码文件使用 `dsh-zed`。更早的 `dshz` 是旧名，已弃用，`install.ps1` 会自动清理旧文件。
 
 解决长期使用中反复出现的几类问题：
 
 - 同一个 DSH 会话被多个 Zed 窗口/进程同时加载，报
   `session "..." is already owned by an active write handle`；
-- 远端残留的 `zed-remote-server`（`setup-*`）与无主 `dsh --profile acp` 进程；
+- 远端残留的 `zed-remote-server` 与无主 `dsh --profile acp` 进程
+  （注意：`setup-*` 是 Zed 的连接池连接，Zed 运行时会自动重连，不属于残留）；
 - Zed 启动时恢复过多个工作区窗口，导致重复加载；
 - 线程 `session_id` 丢失/为空，历史会话打不开。
 
