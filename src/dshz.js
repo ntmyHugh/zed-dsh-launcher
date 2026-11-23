@@ -14,12 +14,13 @@
  *   dshz windows [--prune <id,id>] [--yes]
  *                               列出/清理 Zed 会恢复的工作区窗口
  *   dshz tui                    菜单界面（无参数时默认进入）
+ *   dshz ui                     本地 Web UI（浏览器打开）
  *
  * 所有破坏性操作都先预览，`--yes` 才执行。
  */
 'use strict';
 
-const { execFileSync, execSync, spawnSync } = require('node:child_process');
+const { execFileSync, spawn, spawnSync } = require('node:child_process');
 const { existsSync, mkdtempSync, writeFileSync, copyFileSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
@@ -349,6 +350,7 @@ function cmdTui() {
             out('  4) 清理旧 server / 无锁 acp');
             out('  5) 链接线程（dry-run）');
             out('  6) 列出/清理恢复窗口');
+            out('  7) 打开 Web UI');
             out('  0) 退出');
             const choice = (await ask('选择: ')).trim();
             try {
@@ -360,6 +362,10 @@ function cmdTui() {
                 } else if (choice === '4') cmdClean({ servers: 'stale', acpOrphans: true, state: true });
                 else if (choice === '5') cmdLink(['--dry-run']);
                 else if (choice === '6') cmdWindows([]);
+                else if (choice === '7') {
+                    spawn(process.execPath, [path.join(__dirname, 'ui.js')], { stdio: 'ignore', detached: true }).unref();
+                    out('已在浏览器中打开 Web UI（服务在后台运行）。');
+                }
                 else if (choice === '0') break;
                 else out('无效选项');
             } catch (error) {
@@ -415,9 +421,14 @@ function main() {
         case 'tui':
             cmdTui();
             break;
+        case 'ui': {
+            const result = spawnSync(process.execPath, [path.join(__dirname, 'ui.js'), ...args.slice(1)], { stdio: 'inherit' });
+            process.exitCode = result.status ?? 0;
+            break;
+        }
         default:
             out(`未知命令: ${command}`);
-            out('用法: dshz status|start|release|clean|link|windows [选项]');
+            out('用法: dshz status|start|release|clean|link|windows|tui|ui [选项]');
             process.exitCode = 2;
     }
 }

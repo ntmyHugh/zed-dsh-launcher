@@ -1,0 +1,92 @@
+:root {
+  --bg: #0f1419;
+  --panel: #161d24;
+  --border: #26313b;
+  --text: #d7e0e8;
+  --muted: #7f8f9d;
+  --accent: #4da3ff;
+  --danger: #e5534b;
+  --ok: #3fb950;
+  --warn: #d29922;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Microsoft YaHei UI", "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.title { display: flex; align-items: center; gap: 12px; }
+h1 { font-size: 17px; margin: 0; font-weight: 600; }
+h2 { font-size: 14px; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; font-weight: 600; }
+
+.badge { padding: 2px 8px; border-radius: 10px; font-size: 12px; border: 1px solid var(--border); }
+.badge.ok { color: var(--ok); border-color: var(--ok); }
+.badge.warn { color: var(--warn); border-color: var(--warn); }
+
+.muted { color: var(--muted); font-size: 12px; font-weight: normal; }
+
+main { padding: 16px 20px 40px; display: grid; gap: 14px; }
+
+section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+button {
+  background: #1f2933;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+button:hover { border-color: var(--accent); }
+button.small { padding: 2px 8px; font-size: 12px; }
+button.primary { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+button.danger { border-color: var(--danger); color: #ffb3ae; }
+button.danger:hover { background: #3d1f1f; }
+.actions { display: flex; gap: 8px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { color: var(--muted); font-weight: 500; white-space: nowrap; }
+td { word-break: break-all; }
+tbody tr:hover { background: #1b232b; }
+
+section label { display: inline-flex; align-items: center; gap: 6px; margin-right: 16px; color: var(--muted); }
+
+pre#log {
+  margin: 0;
+  max-height: 260px;
+  overflow: auto;
+  background: #0b0f13;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+body.busy { cursor: progress; }
+body.busy button { opacity: .6; pointer-events: none; }

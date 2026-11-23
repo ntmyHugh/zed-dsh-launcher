@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DSH-Z 控制台</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <div class="title">
+      <h1>DSH-Z 控制台</h1>
+      <span id="zed-badge" class="badge">本地 Zed: …</span>
+      <span id="updated" class="muted"></span>
+    </div>
+    <div class="actions">
+      <button id="btn-refresh">刷新</button>
+      <button id="btn-start" class="primary">启动 Zed</button>
+      <button id="btn-logs">Zed 日志</button>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>远端 zed remote server <span id="server-count" class="muted"></span>
+        <button id="btn-clean-servers" class="small danger">清理旧 server</button>
+      </h2>
+      <table id="servers"><thead><tr><th>identifier</th><th>pid</th><th>运行时长</th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section>
+      <h2>会话锁 <span id="lock-count" class="muted"></span>
+        <button id="btn-release-dups" class="small danger">释放重复持有</button>
+      </h2>
+      <table id="locks"><thead><tr><th>会话</th><th>标题</th><th>持有者 pid</th><th>状态</th><th>操作</th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section>
+      <h2>远端 acp 进程 <span id="acp-count" class="muted"></span></h2>
+      <table id="acp"><thead><tr><th>pid</th><th>运行时长</th><th>cwd</th><th>是否持锁</th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section>
+      <h2>清理</h2>
+      <label><input type="checkbox" id="opt-stale" checked /> 旧 server（setup-*）</label>
+      <label><input type="checkbox" id="opt-orphan" /> 无锁 acp 进程</label>
+      <label><input type="checkbox" id="opt-state" /> 失效 server_state</label>
+      <button id="btn-clean" class="danger">执行清理</button>
+    </section>
+
+    <section>
+      <h2>Zed 恢复窗口 <button id="btn-windows" class="small">加载</button>
+        <button id="btn-prune" class="small danger">删除选中</button>
+      </h2>
+      <table id="windows"><thead><tr><th>选择</th><th>id</th><th>路径</th><th>最后使用</th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section>
+      <h2>输出 / 日志 <button id="btn-clear-log" class="small">清空</button></h2>
+      <pre id="log"></pre>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

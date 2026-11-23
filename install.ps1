@@ -27,9 +27,16 @@ function Copy-GbkCrlf($srcRel, $dst) {
 
 Write-Host 'Installing zed-dsh-launcher...'
 Copy-Utf8 'src/dshz.js' (Join-Path $bin 'dshz.js')
+Copy-Utf8 'src/ui.js' (Join-Path $bin 'ui.js')
 Copy-Utf8 'remote/zed-status.sh' (Join-Path $bin 'zed-status.sh')
+$webTarget = Join-Path $bin 'web'
+if (-not (Test-Path $webTarget)) { New-Item -ItemType Directory -Force -Path $webTarget | Out-Null }
+foreach ($file in Get-ChildItem (Join-Path $repo 'src\web') -File) {
+    Copy-Utf8 ('src/web/' + $file.Name) (Join-Path $webTarget $file.Name)
+}
 Copy-GbkCrlf 'bin/dshz.cmd' (Join-Path $bin 'dshz.cmd')
 Copy-GbkCrlf 'desktop/DSH-Z 控制台.bat' (Join-Path $desktopDir 'DSH-Z 控制台.bat')
+Copy-GbkCrlf 'desktop/DSH-Z UI.bat' (Join-Path $desktopDir 'DSH-Z UI.bat')
 
 Write-Host ''
 Write-Host "完成。入口: $(Join-Path $desktopDir 'DSH-Z 控制台.bat')"

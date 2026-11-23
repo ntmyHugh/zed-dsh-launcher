@@ -27,6 +27,19 @@
 
 破坏性操作默认先预览再确认；`--yes` 跳过确认，供脚本调用。
 
+## Web UI
+
+`dshz ui` 会启动本地服务并（默认）用 Edge 应用窗口打开：
+
+```bat
+dshz ui                 :: 自动选择端口并打开
+dshz ui --port 18080    :: 固定端口
+dshz ui --no-open       :: 只起服务
+```
+
+页面功能：状态总览（server / acp / 会话锁，重复持有标 ⚠）、按会话释放锁、清理旧 server/无锁进程/残留状态、一键启动 Zed、加载并删除 Zed 恢复窗口、查看 Zed 日志尾部、操作输出面板，每 4 秒自动刷新。
+
+前端零框架（原生 HTML/JS），后端 `src/ui.js` 通过调用 `dshz` CLI（`--json` / `--yes`）复用同一套逻辑，避免业务分叉。
 ## 安装
 
 1. 依赖：
@@ -75,6 +88,8 @@ dshz release --duplicates
 
 ```
 src/dshz.js            核心逻辑（Node CLI）
+src/ui.js              本地 Web UI 服务（HTTP API + 静态页）
+src/web/               UI 前端（index.html / app.js / style.css）
 bin/dshz.cmd           Windows 入口（自动定位 DSH 自带 Node）
 remote/zed-status.sh   远端状态采集脚本（JSON 输出）
 desktop/DSH-Z 控制台.bat  菜单入口
