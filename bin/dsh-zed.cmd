@@ -9,7 +9,7 @@ if not exist "%NODE%" (
   where node >nul 2>nul && set "NODE=node"
 )
 if not exist "%NODE%" (
-  echo [错误] 找不到 Node 运行时。请检查 DeepSeek Harness 安装。
+  echo [ERROR] Node runtime not found. Check your DeepSeek Harness installation.
   pause
   exit /b 1
 )

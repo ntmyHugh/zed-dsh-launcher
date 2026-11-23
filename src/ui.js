@@ -58,7 +58,7 @@ function stopServer() {
 
 const options = process.argv.slice(2);
 const portOption = Number((options.find((_, i) => options[i - 1] === '--port') || '') || 0);
-const noOpen = options.includes('--no-open');
+const noOpen = options.includes('--no-open') || process.env.DSH_ZED_NO_OPEN === '1';
 
 function runDshz(args, timeout = 180000) {
     const result = spawnSync(process.execPath, [DSHZ, ...args], { encoding: 'utf8', timeout, maxBuffer: 8 * 1024 * 1024 });
