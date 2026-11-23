@@ -23,6 +23,10 @@ const ZED_LOG = path.join(process.env.LOCALAPPDATA || '', 'Zed', 'logs', 'Zed.lo
 const RUN_DIR = path.join(process.env.USERPROFILE || process.env.HOME || '', '.dsh', 'run');
 const STATE_FILE = path.join(RUN_DIR, 'dsh-zed-ui.json');
 
+const options = process.argv.slice(2);
+const portOption = Number((options.find((_, i) => options[i - 1] === '--port') || '') || 0);
+const noOpen = options.includes('--no-open') || process.env.DSH_ZED_NO_OPEN === '1';
+
 function readState() {
     try {
         return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
@@ -40,31 +44,43 @@ function pidAlive(pid) {
     }
 }
 
-function openBrowser(url) {
-    spawn('powershell', ['-NoProfile', '-Command', `Start-Process msedge --app=${url}`], { stdio: 'ignore', detached: true }).unref();
+function removeStateFile() {
+    try {
+        fs.unlinkSync(STATE_FILE);
+    } catch {
+        // ignore
+    }
 }
 
 function stopServer() {
     const state = readState();
     if (!state || !pidAlive(state.pid)) {
         console.log('DSH-Z UI 没有在运行。');
-        try { fs.unlinkSync(STATE_FILE); } catch {}
+        removeStateFile();
         return;
     }
-    try { process.kill(state.pid, 'SIGTERM'); } catch {}
-    try { fs.unlinkSync(STATE_FILE); } catch {}
+    try {
+        process.kill(state.pid, 'SIGTERM');
+    } catch {
+        // ignore
+    }
+    removeStateFile();
     console.log(`已停止 DSH-Z UI（pid ${state.pid}, ${state.url}）`);
 }
 
-const options = process.argv.slice(2);
-const portOption = Number((options.find((_, i) => options[i - 1] === '--port') || '') || 0);
-const noOpen = options.includes('--no-open') || process.env.DSH_ZED_NO_OPEN === '1';
+function openBrowser(url) {
+    // 用默认浏览器打开链接：在已有窗口中新建标签页，而不是新窗口
+    spawn('cmd', ['/c', 'start', '', url], { stdio: 'ignore', detached: true }).unref();
+}
+
+function sleepSync(ms) {
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
 
 function runDshz(args, timeout = 180000) {
     const result = spawnSync(process.execPath, [DSHZ, ...args], { encoding: 'utf8', timeout, maxBuffer: 8 * 1024 * 1024 });
     if (result.error) return { ok: false, output: result.error.message };
-    const output = `${result.stdout || ''}${result.stderr || ''}`.trim();
-    return { ok: result.status === 0, output };
+    return { ok: result.status === 0, output: `${result.stdout || ''}${result.stderr || ''}`.trim() };
 }
 
 function status() {
@@ -113,9 +129,9 @@ function tailLog(lines) {
     return text.slice(-Math.max(1, Math.min(lines, 2000))).join('\n');
 }
 
-function sendJson(response, status, payload) {
+function sendJson(response, statusCode, payload) {
     const body = JSON.stringify(payload);
-    response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+    response.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
     response.end(body);
 }
 
@@ -149,6 +165,38 @@ function readBody(request) {
         });
         request.on('error', reject);
     });
+}
+
+if (options.includes('--stop')) {
+    stopServer();
+    process.exit(0);
+}
+
+if (options.includes('--detach') && !process.env.DSH_ZED_UI_CHILD) {
+    const running = readState();
+    if (running && pidAlive(running.pid)) {
+        console.log(`DSH-Z UI 已在运行: ${running.url}`);
+        if (!noOpen) openBrowser(running.url);
+        process.exit(0);
+    }
+    const child = spawn(process.execPath, [__filename, '--no-open'], {
+        detached: true,
+        stdio: 'ignore',
+        env: { ...process.env, DSH_ZED_UI_CHILD: '1' },
+    });
+    child.unref();
+    const deadline = Date.now() + 15000;
+    while (Date.now() < deadline) {
+        const current = readState();
+        if (current && pidAlive(current.pid)) {
+            console.log(`DSH-Z UI 已在后台启动: ${current.url}`);
+            if (!noOpen) openBrowser(current.url);
+            process.exit(0);
+        }
+        sleepSync(100);
+    }
+    console.error('DSH-Z UI 启动超时。');
+    process.exit(1);
 }
 
 async function handleApi(request, response) {
@@ -197,42 +245,6 @@ async function handleApi(request, response) {
     }
 }
 
-function sleepSync(ms) {
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
-}
-
-if (options.includes('--stop')) {
-    stopServer();
-    process.exit(0);
-}
-
-if (options.includes('--detach') && !process.env.DSH_ZED_UI_CHILD) {
-    const running = readState();
-    if (running && pidAlive(running.pid)) {
-        console.log(`DSH-Z UI 已在运行: ${running.url}`);
-        openBrowser(running.url);
-        process.exit(0);
-    }
-    const child = spawn(process.execPath, [__filename, '--no-open'], {
-        detached: true,
-        stdio: 'ignore',
-        env: { ...process.env, DSH_ZED_UI_CHILD: '1' },
-    });
-    child.unref();
-    const deadline = Date.now() + 15000;
-    while (Date.now() < deadline) {
-        const current = readState();
-        if (current && pidAlive(current.pid)) {
-            console.log(`DSH-Z UI 已在后台启动: ${current.url}`);
-            openBrowser(current.url);
-            process.exit(0);
-        }
-        sleepSync(100);
-    }
-    console.error('DSH-Z UI 启动超时。');
-    process.exit(1);
-}
-
 const server = http.createServer((request, response) => {
     if (request.url.startsWith('/api/')) {
         void handleApi(request, response);
@@ -252,9 +264,7 @@ server.listen(portOption, HOST, () => {
 
 function cleanupState() {
     const state = readState();
-    if (state && state.pid === process.pid) {
-        try { fs.unlinkSync(STATE_FILE); } catch {}
-    }
+    if (state && state.pid === process.pid) removeStateFile();
 }
 
 process.on('SIGINT', () => {
