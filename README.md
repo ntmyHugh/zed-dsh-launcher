@@ -44,6 +44,11 @@ dsh-zed ui --no-open       :: 只起服务
 
 前端零框架（原生 HTML/JS），后端 `src/ui.js` 通过调用 `dsh-zed` CLI（`--json` / `--yes`）复用同一套逻辑，避免业务分叉。
 
+### 仓库内直接运行
+
+仓库里的 `desktop/*.bat` 会优先使用 **仓库内的** `bin/dsh-zed.cmd`（进而运行 `src/dsh-zed.js`），因此不安装也能直接跑；找不到时才回退到 `%USERPROFILE%\.dsh\bin\dsh-zed.cmd`。
+
+安装后的桌面副本同样使用这段逻辑：桌面目录没有 `..\bin`，于是回退到已安装版本。
 ### 运行方式
 
 桌面 `DSH-Z UI.bat` 使用**前台模式**：
