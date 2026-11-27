@@ -30,7 +30,14 @@ const HOST = 'linuxServer';
 const HOME = process.env.USERPROFILE || process.env.HOME || '';
 const ZED = path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Zed', 'Zed.exe');
 const DSH_EXE = path.join(process.env.LOCALAPPDATA || '', 'Programs', 'DeepSeek Harness', 'DeepSeek Harness.exe');
-const LINK_SCRIPT = path.join(HOME, '.dsh', 'bin', 'link-zed-threads.js');
+const LINK_SCRIPT = (() => {
+    const candidates = [
+        path.join(__dirname, 'link-zed-threads.js'),
+        path.join(__dirname, '..', 'link-zed-threads.js'),
+        path.join(HOME, '.dsh', 'bin', 'link-zed-threads.js'),
+    ];
+    return candidates.find((candidate) => existsSync(candidate)) ?? candidates[candidates.length - 1];
+})();
 const REMOTE_STATUS = (() => {
     const local = path.join(__dirname, 'zed-status.sh');
     if (existsSync(local)) return local;
