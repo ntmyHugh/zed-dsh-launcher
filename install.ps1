@@ -36,6 +36,7 @@ foreach ($old in @('dshz.js', 'dshz.cmd')) {
 Copy-Utf8 'src/dsh-zed.js' (Join-Path $bin 'dsh-zed.js')
 Copy-Utf8 'src/ui.js' (Join-Path $bin 'ui.js')
 Copy-Utf8 'remote/zed-status.sh' (Join-Path $bin 'zed-status.sh')
+Copy-Utf8 'link-zed-threads.js' (Join-Path $bin 'link-zed-threads.js')
 
 $webTarget = Join-Path $bin 'web'
 if (-not (Test-Path $webTarget)) { New-Item -ItemType Directory -Force -Path $webTarget | Out-Null }
